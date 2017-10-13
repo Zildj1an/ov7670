@@ -43,24 +43,19 @@ static void captureImg(uint16_t wg, uint16_t hg)
     hg2 = hg;
     while (hg2--)
     {
-        b = buf + ((hg - hg2) / 16 * 20);
+        b = buf + (hg2 / 16 * 20);
         wg2 = wg;
         while (wg2--)
         {
+            x = wg2 / 16;
             // Get Y (luminance)
             while ((PIND & 4))
                 ; //wait for low
-            // b[(wg - wg2) / 64] += (PINC & 15) | (PIND & 240);
-            // *b = (PINC & 15) | (PIND & 240);
             pix = (PINC & 15) | (PIND & 240);
-            // *b += (PINC & 15) | (PIND & 240);
-            // b += !(wg2 & 0x1F);
-            // UDR0 = ((*b2++) >> (int)2) + 32;
             while (!(PIND & 4))
                 ; //wait for high
 
-            if (hg2 % 4 == 0)
-                UDR0 = (pix >> 3) + '0';
+            b[x] += pix;
 
             // Ignore UV (Chrominance)
             while ((PIND & 4))
@@ -68,33 +63,20 @@ static void captureImg(uint16_t wg, uint16_t hg)
             while (!(PIND & 4))
                 ; //wait for high
         }
-        while (!(UCSR0A & (1 << UDRE0)))
-            ; //wait for byte to transmit
-        if (hg2 % 4 == 0)
-        {
-            UDR0 = '\n';
-            while (!(UCSR0A & (1 << UDRE0)))
-                ; //wait for byte to transmit
-        }
     }
 
-    UDR0 = '\n';
-    while (!(UCSR0A & (1 << UDRE0)))
-        ; //wait for byte to transmit
-    UDR0 = '\n';
-
-    // for (y = 0; y < 15; y++)
-    // {
-    //     for (x = 0; x < 20; x++)
-    //     {
-    //         UDR0 = (uint8_t)(buf[y * 20 + x] >> 0) + ' ';
-    //         while (!(UCSR0A & (1 << UDRE0)))
-    //             ; //wait for byte to transmit
-    //     }
-    //     UDR0 = '\n';
-    //     while (!(UCSR0A & (1 << UDRE0)))
-    //         ; //wait for byte to transmit
-    // }
+    serialWrB('1');
+    serialWrB('\n');
+    for (y = 0; y < 15; y++)
+    {
+        for (x = 0; x < 20; x++)
+        {
+            serialWrB((buf[y * 20 + x] >> 10) + ' ');
+        }
+        serialWrB('\n');
+    }
+    serialWrB('2');
+    serialWrB('\n');
 }
 
 int main(void)
@@ -115,14 +97,14 @@ int main(void)
     TWBR = 72;  //set to 100khz
     //enable serial
     UBRR0H = 0;
-    UBRR0L = 1;                           //0 = 2M baud rate. 1 = 1M baud. 3 = 0.5M. 7 = 250k 207 is 9600 baud rate.
+    UBRR0L = 3;                           //0 = 2M baud rate. 1 = 1M baud. 3 = 0.5M. 7 = 250k 207 is 9600 baud rate.
     UCSR0A |= 2;                          //double speed aysnc
     UCSR0B = (1 << RXEN0) | (1 << TXEN0); //Enable receiver and transmitter
     UCSR0C = 6;                           //async 1 stop bit 8bit char no parity bits
     camInit();
     setRes(QVGA);
     setColorSpace(YUV422);
-    wrReg(0x11, 3);
+    wrReg(0x11, 1);
     /* If you are not sure what value to use here for the divider (register 0x11)
 	 * Values I have found to work raw vga 25 qqvga yuv422 12 qvga yuv422 21
 	 * run the commented out test below and pick the smallest value that gets a correct image */
