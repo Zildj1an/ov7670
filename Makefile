@@ -117,7 +117,7 @@ AVRDUDE_PROGRAMMERID=arduino
 # port--serial or parallel port to which your 
 # hardware programmer is attached
 #
-AVRDUDE_PORT=/dev/ttyACM0
+AVRDUDE_PORT=/dev/tty.usbmodem1411
 
 
 ####################################################
