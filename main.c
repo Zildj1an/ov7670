@@ -15,6 +15,7 @@ static inline void serialWrB(uint8_t dat)
     while (!(UCSR0A & (1 << UDRE0)))
         ; //wait for byte to transmit
 }
+
 static void StringPgm(const char *str)
 {
     do
@@ -22,6 +23,7 @@ static void StringPgm(const char *str)
         serialWrB(pgm_read_byte_near(str));
     } while (pgm_read_byte_near(++str));
 }
+
 static void captureImg(uint16_t wg, uint16_t hg)
 {
     uint16_t lg2;
@@ -46,25 +48,29 @@ static void captureImg(uint16_t wg, uint16_t hg)
             *b++ = (PINC & 15) | (PIND & 240);
             while (!(PIND & 4))
                 ; //wait for high
+
             while ((PIND & 4))
                 ; //wait for low
             *b++ = (PINC & 15) | (PIND & 240);
             while (!(PIND & 4))
                 ; //wait for high
+
             while ((PIND & 4))
                 ; //wait for low
             *b++ = (PINC & 15) | (PIND & 240);
             while (!(PIND & 4))
                 ; //wait for high
+
             while ((PIND & 4))
                 ; //wait for low
             *b++ = (PINC & 15) | (PIND & 240);
             while (!(PIND & 4))
                 ; //wait for high
+
             while ((PIND & 4))
                 ; //wait for low
             *b++ = (PINC & 15) | (PIND & 240);
-            UDR0 = *b2++;
+            UDR0 = (*b2++) >> (int)4 + 32;
             while (!(PIND & 4))
                 ; //wait for high
         }
@@ -74,11 +80,13 @@ static void captureImg(uint16_t wg, uint16_t hg)
             ; //wait for byte to transmit
         while (lg2--)
         {
-            UDR0 = *b2++;
+            UDR0 = (*b2++) >> (int)4 + 32;
             while (!(UCSR0A & (1 << UDRE0)))
                 ; //wait for byte to transmit
         }
+        UDR0 = '\n';
     }
+    UDR0 = '\n';
 }
 
 int main(void)
@@ -104,7 +112,7 @@ int main(void)
     UCSR0B = (1 << RXEN0) | (1 << TXEN0); //Enable receiver and transmitter
     UCSR0C = 6;                           //async 1 stop bit 8bit char no parity bits
     camInit();
-    setRes(QQVGA);
+    setRes(QQVGA); // 160 width x 120 height
     setColorSpace(YUV422);
     wrReg(0x11, 12);
     /* If you are not sure what value to use here for the divider (register 0x11)
